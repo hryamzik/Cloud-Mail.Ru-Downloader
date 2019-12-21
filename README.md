@@ -9,6 +9,14 @@
 - Для работы скрипта нужно установить php на компьютер, например отсюда http://windows.php.net/download/ (если уже установлен какой-нибудь Веб-сервер, например, [Denwer](http://www.denwer.ru/) или [OpenServer](http://open-server.ru/), то php от него тоже подойдет).
 - Скрипт работает в PHP версий *5.x.x-7.2.x*.
 
+## Requirements
+
+`aria2c` in PATH.
+
+## Usage
+
+Run `./cloud@mail.ru_downloader.php file_with_links.txt`
+
 ## Порядок работы
 
 - Скачать релиз скрипта, в который уже включена минимальная версия php

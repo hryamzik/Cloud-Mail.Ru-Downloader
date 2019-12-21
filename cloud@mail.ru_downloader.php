@@ -1,15 +1,21 @@
+#!/usr/bin/env php
 <?php
-  $links_file = "links.txt";
+  if ($argc != 2) {
+      exit("Usage: $argv[0] list.txt\n");
+  }
+  $links_file = $argv[1];
   $storage_path = "downloads";
 
-  $file4aria = "input.txt";
+  $file4aria = basename($argv[0]) . "_input.txt";
   $aria2c = "aria2c";
   $current_dir = dirname(__FILE__);
 
   // ======================================================================================================== //
+  disable_ob();
 
-  $file4aria = pathcombine($current_dir, $file4aria);
-  $aria2c = pathcombine($current_dir, $aria2c);
+  $file4aria = pathcombine(getcwd(), $file4aria);
+
+  // $aria2c = pathcombine($current_dir, $aria2c);
 
   if (file_exists($file4aria)) unlink($file4aria);
   $links = file($links_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -108,8 +114,23 @@
   function StartDownload()
   {
     global $aria2c, $file4aria;
-    $command = "\"{$aria2c}\" --file-allocation=none --min-tls-version=TLSv1 --max-connection-per-server=10 --split=10 --max-concurrent-downloads=10 --summary-interval=0 --continue --user-agent=\"Mozilla/5.0 (compatible; Firefox/3.6; Linux)\" --input-file=\"{$file4aria}\"";
-    passthru("{$command}");
+    $command = "\"{$aria2c}\" --file-allocation=none --min-tls-version=TLSv1 --max-connection-per-server=10 --split=10 --max-concurrent-downloads=10 --summary-interval=10 --continue --user-agent=\"Mozilla/5.0 (compatible; Firefox/3.6; Linux)\" --input-file=\"{$file4aria}\"";
+    // passthru("{$command}");
+    // system("{$command}");
+    $descriptorspec = array(
+       0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
+       1 => array("pipe", "w"),   // stdout is a pipe that the child will write to
+       2 => array("pipe", "w")    // stderr is a pipe that the child will write to
+    );
+    flush();
+    $process = proc_open($command, $descriptorspec, $pipes, realpath('./'), array());
+    echo "Launched aria2c:" . $command . PHP_EOL;
+    if (is_resource($process)) {
+        while ($s = fgets($pipes[1])) {
+            print $s;
+            flush();
+        }
+    }
   }
 
   // ======================================================================================================== //
@@ -159,4 +180,27 @@
   }
 
   // ======================================================================================================== //
+  function disable_ob() {
+      // Turn off output buffering
+      ini_set('output_buffering', 'off');
+      // Turn off PHP output compression
+      ini_set('zlib.output_compression', false);
+      // Implicitly flush the buffer(s)
+      ini_set('implicit_flush', true);
+      ob_implicit_flush(true);
+      // Clear, and turn off output buffering
+      while (ob_get_level() > 0) {
+          // Get the curent level
+          $level = ob_get_level();
+          // End the buffering
+          ob_end_clean();
+          // If the current level has not changed, abort
+          if (ob_get_level() == $level) break;
+      }
+      // Disable apache output buffering/compression
+      if (function_exists('apache_setenv')) {
+          apache_setenv('no-gzip', '1');
+          apache_setenv('dont-vary', '1');
+      }
+  }
 ?>
